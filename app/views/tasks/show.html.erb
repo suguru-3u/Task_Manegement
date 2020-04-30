@@ -16,7 +16,7 @@
     </tr>
     <tr>
       <th>詳しい説明</th>
-      <th><%= simple_format(h(@task.description),{},sanitize:false,wrapper_tag:"div") %></th>
+      <th><%= auto_link(simple_format(h(@task.description),{},sanitize:false,wrapper_tag:"div")) %></th>
     </tr>
     <tr>
       <th>登録日時</th>
