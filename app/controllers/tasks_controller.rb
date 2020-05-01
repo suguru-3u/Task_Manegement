@@ -2,7 +2,13 @@ class TasksController < ApplicationController
   before_action :set_task, only: [:show,:edit,:update,:destroy]
 
   def index
-    @tasks = current_user.tasks.recent
+    @q = current_user.tasks.ransack(params[:q])
+    @tasks = @q.result(distinct: true)
+
+    respond_to do |format|
+      format.html
+      format.csv{ send_data @tasks.generate_csv,fiilename: "tasks-#{Time.zone.now.strftime('%Y%m%d%S')}.csv" }
+    end
   end
 
   def show
@@ -17,10 +23,16 @@ class TasksController < ApplicationController
 
   def create
     @task = current_user.tasks.new(task_params)
+    # 登録確認処理
+    if params[:back].present?
+      render :new
+      return
+    end
+    # 登録処理
     if @task.save
-        redirect_to tasks_path, notice:"タスク「#{@task.name}」を登録しました。"
-      else
-        render :new
+      redirect_to tasks_path, notice:"タスク「#{@task.name}」を登録しました。"
+    else
+      render :new
     end
   end
 
@@ -32,7 +44,17 @@ class TasksController < ApplicationController
 
   def destroy
     @task.destroy
-    redirect_to tasks_path,notice:"タスク「#{task.name}」を削除しました。"
+    redirect_to tasks_path,notice:"タスク「#{@task.name}」を削除しました。"
+  end
+
+  def confirm_new
+    @task = current_user.tasks.new(task_params)
+    render :new unless @task.valid?
+  end
+
+  def import
+    current_user.tasks.import(params[:file])
+    redirect_to tasks_path,notice:"タスクを追加しました"
   end
 
   private
